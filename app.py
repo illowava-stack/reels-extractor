@@ -37,7 +37,7 @@ st.markdown("""
 
 # --- Core Functions ---
 
-def download_audio_with_progress(url, output_path, progress_bar, status_text):
+def download_audio_with_progress(url, output_path, progress_bar, status_text, cookies_path=None):
     def my_hook(d):
         if d['status'] == 'downloading':
             try:
@@ -65,6 +65,11 @@ def download_audio_with_progress(url, output_path, progress_bar, status_text):
         'no_warnings': True,
         'progress_hooks': [my_hook],
     }
+    
+    # 쿠키 파일이 제공된 경우 옵션에 추가
+    if cookies_path and os.path.exists(cookies_path):
+        ydl_opts['cookiefile'] = cookies_path
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
@@ -77,6 +82,16 @@ st.markdown("---")
 
 gemini_api_key = st.text_input("🔑 본인의 Gemini API Key를 입력하세요:", type="password", placeholder="AI Studio에서 발급받은 API Key (AIzaSy...)")
 url = st.text_input("🔗 여기에 인스타그램 릴스 주소를 붙여넣으세요:", placeholder="https://www.instagram.com/reel/...")
+
+with st.expander("⚠️ 인스타그램 접속 에러(다운로드 실패)가 나나요? 클릭해서 해결법 보기"):
+    st.markdown("""
+    인스타그램이 자체적으로 로봇(자동 다운로드) 접속을 막아서 발생하는 에러입니다.
+    이 브라우저에 쿠키 파일(`cookies.txt`)을 업로드하면 사람처럼 인증되어 정상 다운로드가 가능합니다.
+    1. 크롬 확장프로그램 [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) 설치
+    2. 인스타그램 웹사이트 로그인 상태에서 위 확장프로그램 아이콘 클릭 후 `Export` 눌러 다운로드
+    3. 다운받은 `cookies.txt` 파일을 아래에 업로드하세요. (개인정보는 서버에 저장되지 않고 즉시 폐기됩니다!)
+    """)
+    cookies_upload = st.file_uploader("🍪 (선택) Instagram 쿠키 파일 업로드", type=["txt"])
 
 if st.button("🚀 대본 추출 시작"):
     if not gemini_api_key:
@@ -92,6 +107,13 @@ if st.button("🚀 대본 추출 시작"):
                 audio_path = os.path.join(tmpdirname, "audio_file")
                 mp3_path = audio_path + ".mp3"
                 
+                # 임시 쿠키 파일 생성
+                cookies_path = None
+                if cookies_upload is not None:
+                    cookies_path = os.path.join(tmpdirname, "cookies.txt")
+                    with open(cookies_path, "wb") as f:
+                        f.write(cookies_upload.getvalue())
+                
                 # 1. Download Audio
                 st.write("### 1. 인스타그램 오디오 다운로드")
                 progress_bar = st.progress(0.0)
@@ -99,7 +121,7 @@ if st.button("🚀 대본 추출 시작"):
                 status_text.write("📥 데이터 연결 준비 중...")
                 
                 try:
-                    download_audio_with_progress(url, audio_path, progress_bar, status_text)
+                    download_audio_with_progress(url, audio_path, progress_bar, status_text, cookies_path)
                 except Exception as e:
                     status.update(label="다운로드 실패!", state="error", expanded=True)
                     st.error(f"영상을 가져올 수 없습니다. 비공개 영상이거나 주소가 올바른지 확인해주세요. (에러: {e})")
@@ -107,8 +129,8 @@ if st.button("🚀 대본 추출 시작"):
                 
                 # 2. Transcribe Audio (Gemini API)
                 st.write("---")
-                st.write("### 2. Gemini 1.5 Flash 모델 분석 진행")
-                st.info("🧠 구글 제미나이가 오디오를 듣고 텍스트로 타이핑하고 있습니다. (잠시만 기다려주세요!)")
+                st.write("### 2. Gemini 2.5 Flash 모델 분석 진행")
+                st.info("🧠 최신 제미나이가 오디오를 듣고 텍스트로 타이핑하고 있습니다. (잠시만 기다려주세요!)")
                 
                 try:
                     start_time = time.time()
