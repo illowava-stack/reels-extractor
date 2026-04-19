@@ -98,6 +98,8 @@ if st.button("🚀 대본 추출 시작"):
         st.warning("먼저 Gemini API Key를 입력해주세요!")
     elif not url:
         st.warning("먼저 릴스 주소를 입력해주세요!")
+    elif "instagram.com" not in url:
+        st.warning("앗! 인스타그램 릴스 주소(`instagram.com/...`)가 아닌 것 같아요. 올바른 릴스 영상 링크를 붙여넣었는지 확인해주세요!")
     else:
         # Configure Gemini
         genai.configure(api_key=gemini_api_key)
