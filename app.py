@@ -83,6 +83,16 @@ st.markdown("---")
 gemini_api_key = st.text_input("🔑 본인의 Gemini API Key를 입력하세요:", type="password", placeholder="AI Studio에서 발급받은 API Key (AIzaSy...)")
 url = st.text_input("🔗 여기에 인스타그램 릴스 주소를 붙여넣으세요:", placeholder="https://www.instagram.com/reel/...")
 
+with st.expander("⚠️ 인스타그램 접속 에러(다운로드 실패)가 나나요? 클릭해서 해결법 보기"):
+    st.markdown("""
+    인스타그램이 자체적으로 로봇(자동 다운로드) 접속을 막아서 발생하는 에러입니다.
+    이 브라우저에 쿠키 파일(`cookies.txt`)을 업로드하면 사람처럼 인증되어 정상 다운로드가 가능합니다.
+    1. 크롬 확장프로그램 [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) 설치
+    2. 인스타그램 웹사이트 로그인 상태에서 위 확장프로그램 아이콘 클릭 후 `Export` 눌러 다운로드
+    3. 다운받은 `cookies.txt` 파일을 아래에 업로드하세요. (개인정보는 서버에 저장되지 않고 즉시 폐기됩니다!)
+    """)
+    cookies_upload = st.file_uploader("🍪 (선택) Instagram 쿠키 파일 업로드", type=["txt"])
+
 if st.button("🚀 대본 추출 시작"):
     if not gemini_api_key:
         st.warning("먼저 Gemini API Key를 입력해주세요!")
@@ -99,14 +109,12 @@ if st.button("🚀 대본 추출 시작"):
                 audio_path = os.path.join(tmpdirname, "audio_file")
                 mp3_path = audio_path + ".mp3"
                 
-                # 서버에 심어둔 고정 쿠키 파일(cookies.txt) 사용
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                cookies_path = os.path.join(current_dir, "cookies.txt")
-                
-                # 쿠키 파일이 없을 경우 경고 메시지 (선택적)
-                if not os.path.exists(cookies_path):
-                    cookies_path = None
-                    st.toast("⚠️ 주의: 서버에 cookies.txt 파일이 없어서 로그인 전용 영상은 다운로드에 실패할 수 있습니다.")
+                # 임시 쿠키 파일 생성
+                cookies_path = None
+                if cookies_upload is not None:
+                    cookies_path = os.path.join(tmpdirname, "cookies.txt")
+                    with open(cookies_path, "wb") as f:
+                        f.write(cookies_upload.getvalue())
                 
                 # 1. Download Audio
                 st.write("### 1. 인스타그램 오디오 다운로드")
