@@ -119,7 +119,7 @@ if st.button("🚀 대본 추출 시작"):
                     
                     # Generate Transcript
                     st.write("📝 대본 작성 중...")
-                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    model = genai.GenerativeModel('models/gemini-2.5-flash')
                     prompt = "이 오디오에서 사람들이 하는 말을 그대로 적어줘. 다른 부연 설명이나 인사말 없이 오직 들리는 내용만 대본 형태의 텍스트로 출력해줘."
                     
                     response = model.generate_content([prompt, uploaded_file])
